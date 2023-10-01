@@ -1,52 +1,78 @@
 package com.enyziee.rinhabackend;
 
-import java.util.List;
+import java.util.ArrayList;
 import java.util.UUID;
 
 public class Pessoa {
     private UUID id;
     private String nome;
+    private String apelido;
     private String nascimento;
-    private List<String> stack;
-
+    private ArrayList<String> stack;
     
-    public Pessoa(UUID id, String nome, String nascimento) {
-        this.id = id;
-        this.nome = nome;
-        this.nascimento = nascimento;
+    public Pessoa() {
+        super();
     }
 
-    public Pessoa(UUID id, String nome, String nascimento, List<String> stack) {
-        this.id = id;
+    public Pessoa(String apelido, String nome, String nascimento) {
+        this.id = UUID.randomUUID();
         this.nome = nome;
+        this.apelido = apelido;
+        this.nascimento = nascimento;
+        this.stack = null;
+    }
+
+    public Pessoa(String apelido, String nome, String nascimento, ArrayList<String> stack) {
+        this.id = UUID.randomUUID();
+        this.nome = nome;
+        this.apelido = apelido;
         this.nascimento = nascimento;
         this.stack = stack;
     }
 
-    public UUID getId() {
-        return id;
+    @Override
+    public String toString() {
+        return "Pessoa {id=" + id + ", nome=" + nome + ", apelido=" + apelido + ", nascimento=" + nascimento
+                + ", stack=" + stack + "}";
     }
+
+    public String getId() {
+        return id.toString();
+    }
+
     public void setId(UUID id) {
         this.id = id;
     }
+
     public String getNome() {
         return nome;
     }
+
     public void setNome(String nome) {
         this.nome = nome;
     }
+
+    public String getApelido() {
+        return apelido;
+    }
+
+    public void setApelido(String apelido) {
+        this.apelido = apelido;
+    }
+
     public String getNascimento() {
         return nascimento;
     }
+
     public void setNascimento(String nascimento) {
         this.nascimento = nascimento;
     }
-    public List<String> getStack() {
-        return stack;
-    }
-    public void setStack(List<String> stack) {
-        this.stack = stack;
+
+    public String getStack() {
+        return stack.toString();
     }
 
-    
+    public void setStack(ArrayList<String> stack) {
+        this.stack = stack;
+    }
 }
