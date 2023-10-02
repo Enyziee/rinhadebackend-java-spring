@@ -9,5 +9,4 @@ class RinhabackendApplicationTests {
 	@Test
 	void contextLoads() {
 	}
-
 }

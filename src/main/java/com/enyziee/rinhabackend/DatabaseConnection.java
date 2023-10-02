@@ -20,7 +20,7 @@ public class DatabaseConnection implements CommandLineRunner {
 
         log.info("Creating tables if no exists");
         jdbcTemplate.execute(
-                "CREATE TABLE IF NOT EXISTS pessoas (id VARCHAR(32) PRIMARY KEY,apelido VARCHAR(32) UNIQUE NOT NULL,nome VARCHAR(100) NOT NULL,nascimento VARCHAR(10) NOT NULL,stack VARCHAR(128));");
+                "CREATE TABLE IF NOT EXISTS pessoas (id VARCHAR(36) PRIMARY KEY,apelido VARCHAR(32) UNIQUE NOT NULL,nome VARCHAR(100) NOT NULL,nascimento VARCHAR(10) NOT NULL,stack VARCHAR(128));");
 
     }
 }

@@ -4,14 +4,16 @@ import java.util.ArrayList;
 import java.util.UUID;
 
 public class Pessoa {
+
     private UUID id;
     private String nome;
     private String apelido;
     private String nascimento;
     private ArrayList<String> stack;
-    
+
     public Pessoa() {
         super();
+        this.id = UUID.randomUUID();
     }
 
     public Pessoa(String apelido, String nome, String nascimento) {
