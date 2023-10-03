@@ -1,7 +1,9 @@
 package com.enyziee.rinhabackend;
 
-import java.util.ArrayList;
 import java.util.UUID;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class Pessoa {
 
@@ -9,23 +11,15 @@ public class Pessoa {
     private String nome;
     private String apelido;
     private String nascimento;
-    private ArrayList<String> stack;
+    private String[] stack;
 
     public Pessoa() {
         super();
         this.id = UUID.randomUUID();
     }
 
-    public Pessoa(String apelido, String nome, String nascimento) {
-        this.id = UUID.randomUUID();
-        this.nome = nome;
-        this.apelido = apelido;
-        this.nascimento = nascimento;
-        this.stack = null;
-    }
-
-    public Pessoa(String apelido, String nome, String nascimento, ArrayList<String> stack) {
-        this.id = UUID.randomUUID();
+    public Pessoa(UUID id, String apelido, String nome, String nascimento, String[] stack) {
+        this.id = id;
         this.nome = nome;
         this.apelido = apelido;
         this.nascimento = nascimento;
@@ -38,8 +32,13 @@ public class Pessoa {
                 + ", stack=" + stack + "}";
     }
 
-    public String getId() {
-        return id.toString();
+    public String toJson() throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.writeValueAsString(Pessoa.this);
+    }
+
+    public UUID getId() {
+        return id;
     }
 
     public void setId(UUID id) {
@@ -70,11 +69,11 @@ public class Pessoa {
         this.nascimento = nascimento;
     }
 
-    public String getStack() {
-        return stack.toString();
+    public String[] getStack() {
+        return stack;
     }
 
-    public void setStack(ArrayList<String> stack) {
+    public void setStack(String[] stack) {
         this.stack = stack;
     }
 }
