@@ -12,8 +12,8 @@ public class DatabaseConfiguration implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DatabaseConfiguration.class);
 
-    public static final String TABLE = "pessoas";
-    public static final String SCHEMA = "(id UUID PRIMARY KEY, " +
+    String TABLE = "pessoas";
+    String SCHEMA = "(id UUID PRIMARY KEY DEFAULT gen_random_uuid(), " +
             "apelido VARCHAR(32) UNIQUE NOT NULL," +
             "nome VARCHAR(100) NOT NULL," +
             "nascimento VARCHAR(10) NOT NULL," +
@@ -25,13 +25,6 @@ public class DatabaseConfiguration implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         log.info("Starting Database init");
-
-        String TABLE = "pessoas";
-        String SCHEMA = "(id UUID PRIMARY KEY, " +
-                "apelido VARCHAR(32) UNIQUE NOT NULL," +
-                "nome VARCHAR(100) NOT NULL," +
-                "nascimento VARCHAR(10) NOT NULL," +
-                "stack VARCHAR(32)[])";
 
         // jdbcTemplate.execute("DROP TABLE " + TABLE);
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS " + TABLE + SCHEMA);
