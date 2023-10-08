@@ -1,23 +1,19 @@
 package com.enyziee.rinhabackend;
 
 import java.net.URI;
-import java.sql.Types;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
-import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,98 +21,87 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 @RestController
+@RequestMapping("/pessoas")
 public class RinhaEndpointsController {
 
     private static final Logger log = LoggerFactory.getLogger(DatabaseConfiguration.class);
+    private PessoasRepository pessoasRepository;
 
-    @Autowired
-    JdbcTemplate database;
+    public RinhaEndpointsController(PessoasRepository pessoasRepository) {
+        this.pessoasRepository = pessoasRepository;
+    }
 
-    @PostMapping("/pessoas")
-    public ResponseEntity<String> postMethodName(@RequestBody Pessoa pessoa) {
-        try {
+    @PostMapping("")
+    public ResponseEntity<String> savePessoa(@RequestBody Pessoas pessoa) {
 
-            if (pessoa.getStack() == null) {
-                database.update("INSERT INTO pessoas(id, apelido, nome, nascimento) VALUES(?,?,?,?)",
-                        pessoa.getId(), pessoa.getApelido(),
-                        pessoa.getNome(), pessoa.getNascimento());
+        if (pessoa.nome == null || pessoa.apelido == null || pessoa.nascimento == null) {
+            return ResponseEntity.unprocessableEntity().build();
+        }
 
-                HttpHeaders headers = new HttpHeaders();
-                headers.setLocation(URI.create("/pessoas/" + pessoa.getId()));
-                return new ResponseEntity<String>(null, headers, 201);
-            } else {
+        if (pessoa.nome.length() >= 100 || pessoa.apelido.length() >= 32) {
+            return ResponseEntity.badRequest().build();
+        }
 
-                if (pessoa.getStack().length != 3) {
-                    throw new Exception("Stack size wrong!");
+        if (pessoa.nome.matches("\\d")) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        if (!pessoa.nascimento.matches("\\d{4}-\\d{2}-\\d{2}")) {
+            return ResponseEntity.badRequest().build();
+        }
+
+        if (pessoa.stack != null) {
+            for (String stackElement : pessoa.stack) {
+                if (stackElement.matches("\\d") || stackElement.length() >= 32) {
+                    return ResponseEntity.badRequest().build();
                 }
-
-                for (String stackElement : pessoa.getStack()) {
-                    if (stackElement.matches("(\\d)")) {
-                        throw new Exception("There numbers in!");
-                    }
-
-                    if (stackElement.length() > 32) {
-                        throw new Exception("Too big!");
-                    }
-                }
-
-                database.update("INSERT INTO pessoas(id, apelido, nome, nascimento, stack) VALUES(?,?,?,?,?)",
-                        pessoa.getId(), pessoa.getApelido(),
-                        pessoa.getNome(), pessoa.getNascimento(), pessoa.getStack());
             }
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setLocation(URI.create("/pessoas/" + pessoa.getId()));
-
-            return new ResponseEntity<String>(null, headers, 201);
-        } catch (Exception e) {
-            log.error(e.getMessage());
-            return new ResponseEntity<String>(null, null, 422);
         }
-    }
 
-    @GetMapping("/pessoas/{id}")
-    public ResponseEntity<String> getPessoaById(@PathVariable("id") UUID id) {
+        if (pessoasRepository.existsByApelido(pessoa.apelido)) {
+            return ResponseEntity.unprocessableEntity().build();
+        }
+
         try {
-            Pessoa pessoa = database.queryForObject("SELECT * FROM pessoas WHERE ID = ?", new PessoaRowMapper(),
-                    id);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            return new ResponseEntity<String>(pessoa.toJson(), headers, 200);
+            Pessoas savedPessoa = pessoasRepository.save(pessoa);
+            return ResponseEntity.created(URI.create("/pessoas/" + savedPessoa.id)).build();
         } catch (Exception e) {
             log.error(e.getMessage());
-            return new ResponseEntity<String>(null, null, 404);
+            return ResponseEntity.unprocessableEntity().build();
         }
     }
 
-    @GetMapping("/pessoas")
-    public ResponseEntity<String> searchPessoas(@RequestParam("termo") String termo) throws JsonProcessingException {
-        log.info(termo);
+    @GetMapping("/{id}")
+    public ResponseEntity<Pessoas> getPessoaById(@PathVariable("id") UUID id) {
+        if (id == null) {
+            return ResponseEntity.notFound().build();
+        }
 
-        SqlParameterSource parameters = new MapSqlParameterSource("termo", termo);
-        String sql = "SELECT * FROM pessoas WHERE to_tsvector('?') @@ to_tsquery('?')";
-        String sqlBase = "SELECT * FROM pessoas";
+        Optional<Pessoas> pessoa = pessoasRepository.findById(id);
 
-        List<Pessoa> pessoas = database.query(sql,
-                new Object[] { termo, termo },
-                new String[] { Types.VARCHAR },
-                new PessoaRowMapper());
+        if (pessoa.isPresent()) {
+            return ResponseEntity.ok(pessoa.get());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
 
-        // // List<Pessoa> pessoas = database.query(sql, new PessoaRowMapper(), termo,
-        // termo);
+    @GetMapping("")
+    public ResponseEntity<String> searchPessoas(@RequestParam("t") String t) throws JsonProcessingException {
+        if (t.isEmpty()) {
+            return ResponseEntity.badRequest().build();
+        }
 
-        // List<Pessoa> pessoas = database.query(sqlBase, new PessoaRowMapper());
+        List<Pessoas> listPessoas = pessoasRepository.searchByTerm(t);
 
-        ObjectMapper objectMapper = new ObjectMapper();
-        String pessoasJson = objectMapper.writeValueAsString(pessoas);
+        ObjectMapper mapper = new ObjectMapper();
+        String pessoasJson = mapper.writeValueAsString(listPessoas);
 
-        return new ResponseEntity<String>(pessoasJson, null, 200);
+        return new ResponseEntity<String>(pessoasJson, null, HttpStatus.OK);
     }
 
     @GetMapping("/contagem-pessoas")
-    public int contagem() {
-        return database.queryForObject("SELECT COUNT(ID) FROM pessoas", Integer.class);
+    public Long contagem() {
+        return pessoasRepository.count();
     }
 }
